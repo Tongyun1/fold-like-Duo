@@ -4,6 +4,8 @@
 
 # HingeFlow
 
+[简体中文](README.zh-CN.md) | English
+
 A native macOS menu-bar app that makes the desktop follow a MacBook lid as it
 closes. The real lid-angle sensor drives a Metal-rendered perspective, blur,
 frost, and shadow effect.
