@@ -51,6 +51,10 @@ fold-like-Duo needs Screen Recording permission only to render the live desktop 
 the folding surface. Frames stay in memory and are never saved or uploaded.
 Audio and the pointer are not captured, and the app has no network feature.
 
+On first launch, the app asks macOS to show the Screen Recording permission
+prompt automatically. If access was previously denied, use the Privacy Settings
+button because macOS does not show the system prompt a second time.
+
 Launch at Login is optional. Reading the built-in lid sensor and registering the
 emergency shortcut do not require additional privacy permissions.
 

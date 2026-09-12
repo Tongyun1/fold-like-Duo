@@ -105,6 +105,11 @@ final class AppModel: ObservableObject, @unchecked Sendable {
         }
     }
 
+    func requestScreenAccessIfNeeded() {
+        guard permissionNeeded else { return }
+        requestScreenAccess()
+    }
+
     func openPrivacySettings() {
         NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture")!)
     }

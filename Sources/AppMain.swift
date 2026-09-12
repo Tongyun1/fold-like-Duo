@@ -14,6 +14,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         buildStatusItem()
         model.start()
         showSettings()
+        model.requestScreenAccessIfNeeded()
 
         model.objectWillChange
             .throttle(for: .milliseconds(400), scheduler: RunLoop.main, latest: true)
