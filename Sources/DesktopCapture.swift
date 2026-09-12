@@ -63,7 +63,13 @@ final class DesktopCapture: NSObject, SCStreamOutput, SCStreamDelegate {
 
         let stream = SCStream(filter: filter, configuration: configuration, delegate: self)
         try stream.addStreamOutput(self, type: .screen, sampleHandlerQueue: outputQueue)
-        try await stream.startCapture()
+        do {
+            try await stream.startCapture()
+            try Task.checkCancellation()
+        } catch {
+            try? await stream.stopCapture()
+            throw error
+        }
         self.configuration = configuration
         self.stream = stream
         isRunning = true

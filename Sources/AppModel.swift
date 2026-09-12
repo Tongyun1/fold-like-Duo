@@ -209,10 +209,6 @@ final class AppModel: ObservableObject, @unchecked Sendable {
         }
 
         let closing = previous.map { reading < $0 - 0.15 } ?? false
-        if closing, reading < min(triggerAngle + 28, 125) {
-            ensureCaptureStarted()
-        }
-
         let now = CACurrentMediaTime()
         let permitted = gate.permits(angle: filtered, triggerAngle: triggerAngle, now: now)
         let progress = permitted ? parameters.progress(for: filtered) : 0
@@ -226,7 +222,9 @@ final class AppModel: ObservableObject, @unchecked Sendable {
         } else {
             if effectActive { overlay.hide() }
             effectActive = false
-            if reading >= triggerAngle || !closing {
+            if reading >= triggerAngle {
+                stopCaptureImmediately()
+            } else if !closing {
                 scheduleCaptureStop()
             }
             updateMessage()
@@ -249,11 +247,24 @@ final class AppModel: ObservableObject, @unchecked Sendable {
             do {
                 try await capture.start(displayID: displayID, framesPerSecond: 60)
                 captureActive = capture.isRunning
+            } catch is CancellationError {
+                captureActive = false
             } catch {
                 permissionNeeded = !DesktopCapture.hasPermission
                 failClear(error.localizedDescription)
             }
             captureStartTask = nil
+        }
+    }
+
+    private func stopCaptureImmediately() {
+        captureStartTask?.cancel()
+        captureStopTask?.cancel()
+        captureStopTask = Task { [weak self] in
+            guard let self else { return }
+            await capture.stop()
+            captureActive = false
+            captureStopTask = nil
         }
     }
 
