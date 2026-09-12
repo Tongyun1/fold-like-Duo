@@ -39,8 +39,8 @@ final class OverlayController {
                                  defer: false,
                                  screen: screen)
         panel.contentView = view
-        panel.backgroundColor = .black
-        panel.isOpaque = true
+        panel.backgroundColor = .clear
+        panel.isOpaque = false
         panel.hasShadow = false
         panel.ignoresMouseEvents = true
         panel.hidesOnDeactivate = false

@@ -105,7 +105,9 @@ final class EffectGPU {
         pass.colorAttachments[0].texture = target
         pass.colorAttachments[0].loadAction = .clear
         pass.colorAttachments[0].storeAction = .store
-        pass.colorAttachments[0].clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 1)
+        // The folded surface is a trapezoid. Keep the pixels outside it
+        // transparent so the real desktop remains visible instead of black.
+        pass.colorAttachments[0].clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 0)
         guard let encoder = commandBuffer.makeRenderCommandEncoder(descriptor: pass) else { return }
         encoder.setRenderPipelineState(renderPipeline)
         encoder.setVertexBytes(&uniforms, length: MemoryLayout<GPUUniforms>.stride, index: 0)
@@ -161,6 +163,8 @@ final class EffectGPU {
 }
 
 final class EffectMetalView: MTKView, MTKViewDelegate {
+    override var isOpaque: Bool { false }
+
     var parameters = EffectParameters() {
         didSet { isPaused = false }
     }
@@ -195,15 +199,18 @@ final class EffectMetalView: MTKView, MTKViewDelegate {
         }
         framebufferOnly = false
         colorPixelFormat = .bgra8Unorm
-        clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 1)
+        clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 0)
         isPaused = true
         enableSetNeedsDisplay = false
         preferredFramesPerSecond = 120
         autoResizeDrawable = true
         delegate = self
         autoresizingMask = [.width, .height]
-        (layer as? CAMetalLayer)?.colorspace = CGColorSpace(name: CGColorSpace.sRGB)
-        (layer as? CAMetalLayer)?.displaySyncEnabled = true
+        if let metalLayer = layer as? CAMetalLayer {
+            metalLayer.isOpaque = false
+            metalLayer.colorspace = CGColorSpace(name: CGColorSpace.sRGB)
+            metalLayer.displaySyncEnabled = true
+        }
     }
 
     required init(coder: NSCoder) { fatalError("init(coder:) is unsupported") }
