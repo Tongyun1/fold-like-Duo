@@ -106,7 +106,12 @@ final class AppModel: ObservableObject, @unchecked Sendable {
     }
 
     func requestScreenAccessIfNeeded() {
-        guard permissionNeeded else { return }
+        // Read TCC directly here instead of relying on the value captured while
+        // AppModel was being initialized during application startup.
+        guard !DesktopCapture.hasPermission else {
+            permissionNeeded = false
+            return
+        }
         requestScreenAccess()
     }
 

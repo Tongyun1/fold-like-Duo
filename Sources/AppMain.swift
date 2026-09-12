@@ -14,7 +14,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         buildStatusItem()
         model.start()
         showSettings()
-        model.requestScreenAccessIfNeeded()
+        // Let the settings window become key before macOS presents its consent sheet.
+        // Requesting during the launch callback can be ignored on some systems.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.75) { [weak self] in
+            self?.model.requestScreenAccessIfNeeded()
+        }
 
         model.objectWillChange
             .throttle(for: .milliseconds(400), scheduler: RunLoop.main, latest: true)
