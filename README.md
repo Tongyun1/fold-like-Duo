@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="Resources/HingeFlow-AppIcon-Source.png" width="128" alt="HingeFlow icon">
+  <img src="Resources/fold-like-Duo-AppIcon-Source.png" width="128" alt="fold-like-Duo icon">
 </p>
 
-# HingeFlow
+# fold-like-Duo
 
 [简体中文](README.zh-CN.md) | English
 
@@ -33,7 +33,7 @@ required.
 
 ```sh
 ./test.sh       # build and run checks
-./package.sh    # create dist/HingeFlow-1.0.0.dmg
+./package.sh    # create dist/fold-like-Duo-1.0.0.dmg
 ```
 
 The default build is ad-hoc signed. For distribution with a Developer ID:
@@ -47,7 +47,7 @@ Developer credentials.
 
 ## Privacy
 
-HingeFlow needs Screen Recording permission only to render the live desktop as
+fold-like-Duo needs Screen Recording permission only to render the live desktop as
 the folding surface. Frames stay in memory and are never saved or uploaded.
 Audio and the pointer are not captured, and the app has no network feature.
 
@@ -67,4 +67,4 @@ test.sh        Bundle, localization, signature, and behavior checks
 ## License
 
 MIT. See [NOTICE.md](NOTICE.md) for acknowledgements of the open-source projects
-studied while designing HingeFlow. HingeFlow is not affiliated with Apple.
+studied while designing fold-like-Duo. fold-like-Duo is not affiliated with Apple.

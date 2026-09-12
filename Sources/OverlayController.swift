@@ -26,7 +26,7 @@ final class OverlayController {
 
         let view = EffectMetalView()
         if let error = view.initializationError {
-            throw NSError(domain: "HingeFlow.Renderer", code: 1,
+            throw NSError(domain: "FoldLikeDuo.Renderer", code: 1,
                           userInfo: [NSLocalizedDescriptionKey: error])
         }
         view.parameters = parameters

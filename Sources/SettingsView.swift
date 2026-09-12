@@ -48,7 +48,7 @@ struct SettingsView: View {
                 .foregroundStyle(.blue)
                 .frame(width: 48, height: 48)
             VStack(alignment: .leading, spacing: 2) {
-                Text("HingeFlow").font(.system(size: 27, weight: .semibold))
+                Text("fold-like-Duo").font(.system(size: 27, weight: .semibold))
                 Text(L10n.text("Let the desktop follow the hinge.")).foregroundStyle(.secondary)
             }
             Spacer()

@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="${0:A:h}"
-APP_NAME="HingeFlow"
+APP_NAME="fold-like-Duo"
 BUILD_ROOT="${BUILD_ROOT:-$ROOT_DIR/.build}"
 DIST_DIR="${DIST_DIR:-$ROOT_DIR/dist}"
 APP_PATH="$DIST_DIR/$APP_NAME.app"
@@ -50,8 +50,8 @@ else
 fi
 
 cp "$ROOT_DIR/Info.plist" "$CONTENTS/Info.plist"
-cp "$ROOT_DIR/Resources/HingeFlow.icns" "$CONTENTS/Resources/HingeFlow.icns"
-cp "$ROOT_DIR/Resources/HingeFlow.metal" "$CONTENTS/Resources/HingeFlow.metal"
+cp "$ROOT_DIR/Resources/fold-like-Duo.icns" "$CONTENTS/Resources/fold-like-Duo.icns"
+cp "$ROOT_DIR/Resources/fold-like-Duo.metal" "$CONTENTS/Resources/fold-like-Duo.metal"
 cp "$ROOT_DIR/NOTICE.md" "$CONTENTS/Resources/NOTICE.md"
 mkdir -p "$CONTENTS/Resources/en.lproj" "$CONTENTS/Resources/zh-Hans.lproj"
 cp "$ROOT_DIR/Resources/en.lproj/Localizable.strings" "$CONTENTS/Resources/en.lproj/Localizable.strings"

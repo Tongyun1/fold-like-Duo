@@ -9,7 +9,7 @@ private struct SendablePixelBuffer: @unchecked Sendable {
 
 @MainActor
 final class DesktopCapture: NSObject, SCStreamOutput, SCStreamDelegate {
-    private let outputQueue = DispatchQueue(label: "app.hingeflow.capture", qos: .userInteractive)
+    private let outputQueue = DispatchQueue(label: "app.fold-like-duo.capture", qos: .userInteractive)
     private var stream: SCStream?
     private var configuration: SCStreamConfiguration?
     private var starting = false
@@ -117,7 +117,7 @@ enum CaptureError: LocalizedError {
         case .noBuiltInDisplay:
             L10n.text("The built-in display is unavailable.")
         case .cannotExcludeSelf:
-            L10n.text("HingeFlow could not exclude its overlay from capture, so capture was stopped safely.")
+            L10n.text("fold-like-Duo could not exclude its overlay from capture, so capture was stopped safely.")
         }
     }
 }

@@ -44,11 +44,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
                                   styleMask: [.titled, .closable, .miniaturizable],
                                   backing: .buffered,
                                   defer: false)
-            window.title = "HingeFlow"
+            window.title = "fold-like-Duo"
             window.contentView = NSHostingView(rootView: SettingsView(model: model))
             window.isReleasedWhenClosed = false
             window.delegate = self
-            window.setFrameAutosaveName("HingeFlowSettings")
+            window.setFrameAutosaveName("FoldLikeDuoSettings")
             window.center()
             settingsWindow = window
         }
@@ -68,8 +68,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private func buildStatusItem() {
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         item.button?.image = NSImage(systemSymbolName: "laptopcomputer.and.arrow.down",
-                                     accessibilityDescription: "HingeFlow")
-        item.button?.toolTip = "HingeFlow"
+                                     accessibilityDescription: "fold-like-Duo")
+        item.button?.toolTip = "fold-like-Duo"
         statusItem = item
         refreshStatusMenu()
     }
@@ -77,7 +77,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private func refreshStatusMenu() {
         guard let statusItem else { return }
         let menu = NSMenu()
-        let state = NSMenuItem(title: "HingeFlow · \(model.statusTitle)", action: nil, keyEquivalent: "")
+        let state = NSMenuItem(title: "fold-like-Duo · \(model.statusTitle)", action: nil, keyEquivalent: "")
         state.isEnabled = false
         menu.addItem(state)
         if let angle = model.sensorAngle {
@@ -97,7 +97,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         toggle.target = self
         menu.addItem(toggle)
         menu.addItem(.separator())
-        let quit = NSMenuItem(title: L10n.text("Quit HingeFlow"), action: #selector(quit), keyEquivalent: "q")
+        let quit = NSMenuItem(title: L10n.text("Quit fold-like-Duo"), action: #selector(quit), keyEquivalent: "q")
         quit.target = self
         menu.addItem(quit)
         statusItem.menu = menu
@@ -107,9 +107,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         let main = NSMenu()
         let appItem = NSMenuItem()
         let appMenu = NSMenu()
-        appMenu.addItem(withTitle: L10n.text("HingeFlow Settings…"), action: #selector(showSettings), keyEquivalent: ",")
+        appMenu.addItem(withTitle: L10n.text("fold-like-Duo Settings…"), action: #selector(showSettings), keyEquivalent: ",")
         appMenu.addItem(.separator())
-        appMenu.addItem(withTitle: L10n.text("Quit HingeFlow"), action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+        appMenu.addItem(withTitle: L10n.text("Quit fold-like-Duo"), action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         appItem.submenu = appMenu
         main.addItem(appItem)
         NSApp.mainMenu = main
@@ -117,7 +117,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 }
 
 @main
-enum HingeFlowMain {
+enum FoldLikeDuoMain {
     static func main() {
         if CommandLine.arguments.contains("--localization-probe") {
             print(L10n.text("Settings…"))
@@ -130,7 +130,7 @@ enum HingeFlowMain {
                 try SelfCheck.run()
                 exit(0)
             } catch {
-                fputs("HingeFlow self-check failed: \(error.localizedDescription)\n", stderr)
+                fputs("fold-like-Duo self-check failed: \(error.localizedDescription)\n", stderr)
                 exit(1)
             }
         }

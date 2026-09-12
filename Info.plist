@@ -5,15 +5,15 @@
     <key>CFBundleDevelopmentRegion</key>
     <string>en</string>
     <key>CFBundleDisplayName</key>
-    <string>HingeFlow</string>
+    <string>fold-like-Duo</string>
     <key>CFBundleIconFile</key>
-    <string>HingeFlow.icns</string>
+    <string>fold-like-Duo.icns</string>
     <key>CFBundleExecutable</key>
-    <string>HingeFlow</string>
+    <string>fold-like-Duo</string>
     <key>CFBundleIdentifier</key>
-    <string>app.hingeflow.local</string>
+    <string>app.fold-like-duo.local</string>
     <key>CFBundleName</key>
-    <string>HingeFlow</string>
+    <string>fold-like-Duo</string>
     <key>CFBundleLocalizations</key>
     <array>
         <string>en</string>
@@ -32,6 +32,6 @@
     <key>NSHighResolutionCapable</key>
     <true/>
     <key>NSScreenCaptureUsageDescription</key>
-    <string>HingeFlow reads the built-in display only to draw the local lid-fold effect. Frames are never recorded, saved, or uploaded.</string>
+    <string>fold-like-Duo reads the built-in display only to draw the local lid-fold effect. Frames are never recorded, saved, or uploaded.</string>
 </dict>
 </plist>

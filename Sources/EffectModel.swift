@@ -106,7 +106,7 @@ enum SelfCheck {
         var motion = CriticallyDampedMotion()
         for _ in 0..<30 { _ = motion.step(target: 1, dt: 1.0 / 60.0, reducedMotion: false) }
         guard motion.value > 0.98, motion.value <= 1 else { throw Failure("motion must converge") }
-        print("HingeFlow self-check passed")
+        print("fold-like-Duo self-check passed")
     }
 
     struct Failure: LocalizedError {

@@ -17,7 +17,7 @@ enum SampleArtwork {
 
             NSColor.white.withAlphaComponent(0.15).setFill()
             CGRect(x: 0, y: 712, width: 1200, height: 38).fill()
-            drawText(L10n.text("HingeFlow     File     View"), at: CGPoint(x: 22, y: 720), size: 15, weight: .medium, color: .white)
+            drawText(L10n.text("fold-like-Duo     File     View"), at: CGPoint(x: 22, y: 720), size: 15, weight: .medium, color: .white)
 
             NSColor.white.withAlphaComponent(0.92).setFill()
             NSBezierPath(roundedRect: CGRect(x: 110, y: 170, width: 560, height: 400),

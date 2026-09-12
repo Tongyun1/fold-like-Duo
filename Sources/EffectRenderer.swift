@@ -33,7 +33,7 @@ final class EffectGPU {
         self.commandQueue = commandQueue
         context = CIContext(mtlDevice: device, options: [.cacheIntermediates: false])
 
-        guard let shaderURL = Bundle.main.url(forResource: "HingeFlow", withExtension: "metal") else {
+        guard let shaderURL = Bundle.main.url(forResource: "fold-like-Duo", withExtension: "metal") else {
             throw RendererError.missingShader
         }
         let source = try String(contentsOf: shaderURL, encoding: .utf8)
@@ -272,8 +272,8 @@ enum RendererError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .noMetal: L10n.text("A Metal-capable GPU is required.")
-        case .missingShader: L10n.text("The HingeFlow shader is missing. Reinstall the app.")
-        case .missingFunction: L10n.text("The HingeFlow shader could not be loaded.")
+        case .missingShader: L10n.text("The fold-like-Duo shader is missing. Reinstall the app.")
+        case .missingFunction: L10n.text("The fold-like-Duo shader could not be loaded.")
         }
     }
 }

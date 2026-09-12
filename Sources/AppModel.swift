@@ -101,7 +101,7 @@ final class AppModel: ObservableObject, @unchecked Sendable {
         DesktopCapture.requestPermission()
         permissionNeeded = !DesktopCapture.hasPermission
         if permissionNeeded {
-            message = L10n.text("Allow HingeFlow under Privacy & Security → Screen Recording, then return here.")
+            message = L10n.text("Allow fold-like-Duo under Privacy & Security → Screen Recording, then return here.")
         }
     }
 
@@ -124,7 +124,7 @@ final class AppModel: ObservableObject, @unchecked Sendable {
             try LoginService.setEnabled(value)
             launchAtLogin = LoginService.isEnabled
             message = L10n.text(LoginService.needsApproval
-                ? "Approve HingeFlow in System Settings → General → Login Items."
+                ? "Approve fold-like-Duo in System Settings → General → Login Items."
                 : "Launch at login updated.")
         } catch {
             launchAtLogin = LoginService.isEnabled
