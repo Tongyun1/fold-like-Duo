@@ -5,7 +5,7 @@ import CoreImage
 import Foundation
 
 @MainActor
-final class AppModel: ObservableObject {
+final class AppModel: ObservableObject, @unchecked Sendable {
     @Published var automatic: Bool {
         didSet { UserDefaults.standard.set(automatic, forKey: "automatic") }
     }
