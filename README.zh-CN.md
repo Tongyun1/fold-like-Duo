@@ -11,6 +11,10 @@ fold-like-Duo 是一款原生 macOS 菜单栏应用，让桌面画面跟随 MacB
 
 应用内置简体中文和英文，不依赖第三方软件包。
 
+<p align="center">
+  <img src="docs/fold-like-Duo-preview.gif" width="640" alt="fold-like-Duo 折叠特效动态预览">
+</p>
+
 ## 功能
 
 - 通过 IOKit HID 读取真实 MacBook 铰链角度。
@@ -23,9 +27,14 @@ fold-like-Duo 是一款原生 macOS 菜单栏应用，让桌面画面跟随 MacB
 ## 系统要求
 
 - macOS 14 Sonoma 或更高版本
-- 支持 Apple 铰链角度传感器的 MacBook（`VID 0x05AC`、`PID 0x8104`）
+- Apple 芯片或 Intel 处理器；发布包为 Universal 2 应用
+- 自动特效需要能够读取 Apple 铰链角度传感器的 MacBook；当前识别
+  `VID 0x05AC`、`PID 0x8104`，应用会在运行时检测兼容性
+- 部分 M1/M2 Touch Bar 机型可能无法通过当前 HID 接口读取角度；不兼容时仍可使用示例预览
+- 特效仅作用于 MacBook 内建显示器，不处理外接显示器
+- 需要支持 Metal 的 GPU
 - 实时特效需要屏幕录制权限
-- 从源码构建需要 Xcode Command Line Tools
+- 从源码构建需要 Xcode 15 或相应版本的 Xcode Command Line Tools
 
 ## 安装与首次打开
 

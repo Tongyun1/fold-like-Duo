@@ -13,6 +13,10 @@ frost, and shadow effect.
 English and Simplified Chinese are included. No third-party dependencies are
 required.
 
+<p align="center">
+  <img src="docs/fold-like-Duo-preview.gif" width="640" alt="Animated preview of the fold-like-Duo effect">
+</p>
+
 ## Features
 
 - Reads the real MacBook lid angle through IOKit HID.
@@ -25,9 +29,16 @@ required.
 ## Requirements
 
 - macOS 14 Sonoma or later
-- A MacBook exposing Apple's lid-angle sensor (`VID 0x05AC`, `PID 0x8104`)
+- Apple silicon or Intel processor; the release is a Universal 2 app
+- Automatic folding requires a MacBook whose Apple lid-angle sensor is
+  accessible; the current implementation detects `VID 0x05AC`, `PID 0x8104`
+  at runtime
+- Some M1/M2 Touch Bar models may not expose an angle through this HID
+  interface; the sample preview remains available on unsupported hardware
+- The effect applies only to the built-in MacBook display, not external displays
+- A Metal-capable GPU
 - Screen Recording permission for the live effect
-- Xcode Command Line Tools when building from source
+- Xcode 15 or matching Xcode Command Line Tools when building from source
 
 ## Install and open for the first time
 
