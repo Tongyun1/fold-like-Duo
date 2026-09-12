@@ -25,6 +25,7 @@ for ARCH in $ARCH_LIST; do
     ARCH_BINARY="$BUILD_ROOT/$APP_NAME-$ARCH"
     xcrun swiftc \
         -swift-version 5 \
+        -strict-concurrency=complete \
         -O \
         -target "$ARCH-apple-macos14.0" \
         -sdk "$SDK_PATH" \

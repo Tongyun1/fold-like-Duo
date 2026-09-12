@@ -3,6 +3,10 @@ import CoreVideo
 import Foundation
 import ScreenCaptureKit
 
+private struct SendablePixelBuffer: @unchecked Sendable {
+    let value: CVPixelBuffer
+}
+
 @MainActor
 final class DesktopCapture: NSObject, SCStreamOutput, SCStreamDelegate {
     private let outputQueue = DispatchQueue(label: "app.hingeflow.capture", qos: .userInteractive)
@@ -85,9 +89,10 @@ final class DesktopCapture: NSObject, SCStreamOutput, SCStreamDelegate {
               let pixelBuffer = sampleBuffer.imageBuffer
         else { return }
 
+        let frame = SendablePixelBuffer(value: pixelBuffer)
         Task { @MainActor [weak self] in
             self?.lastFrameAt = Date()
-            self?.onFrame?(pixelBuffer)
+            self?.onFrame?(frame.value)
         }
     }
 

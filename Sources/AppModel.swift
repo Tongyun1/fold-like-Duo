@@ -158,8 +158,8 @@ final class AppModel: ObservableObject, @unchecked Sendable {
 
     private func startSensorPolling() {
         let timer = Timer(timeInterval: 1.0 / 60.0, repeats: true) { [weak self] _ in
+            guard let self else { return }
             Task { @MainActor in
-                guard let self else { return }
                 if !self.connected {
                     self.retryTicks += 1
                     guard self.retryTicks == 1 || self.retryTicks % 300 == 0 else { return }
@@ -284,8 +284,8 @@ final class AppModel: ObservableObject, @unchecked Sendable {
             object: nil,
             queue: .main
         ) { [weak self] _ in
+            guard let self else { return }
             Task { @MainActor in
-                guard let self else { return }
                 self.permissionNeeded = !DesktopCapture.hasPermission
                 self.updateMessage()
             }
@@ -299,7 +299,8 @@ final class AppModel: ObservableObject, @unchecked Sendable {
         ]
         for name in suspendNames {
             observers.append(workspace.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
-                Task { @MainActor in self?.suspendForSystem() }
+                guard let self else { return }
+                Task { @MainActor in self.suspendForSystem() }
             })
         }
         let resumeNames: [Notification.Name] = [
@@ -309,7 +310,8 @@ final class AppModel: ObservableObject, @unchecked Sendable {
         ]
         for name in resumeNames {
             observers.append(workspace.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
-                Task { @MainActor in self?.resumeAfterSystem() }
+                guard let self else { return }
+                Task { @MainActor in self.resumeAfterSystem() }
             })
         }
         observers.append(NotificationCenter.default.addObserver(
@@ -317,9 +319,10 @@ final class AppModel: ObservableObject, @unchecked Sendable {
             object: nil,
             queue: .main
         ) { [weak self] _ in
+            guard let self else { return }
             Task { @MainActor in
-                self?.suspendForSystem()
-                self?.resumeAfterSystem()
+                self.suspendForSystem()
+                self.resumeAfterSystem()
             }
         })
         observers.append(workspace.addObserver(
@@ -327,8 +330,9 @@ final class AppModel: ObservableObject, @unchecked Sendable {
             object: nil,
             queue: .main
         ) { [weak self] _ in
+            guard let self else { return }
             Task { @MainActor in
-                self?.reducedMotion = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
+                self.reducedMotion = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
             }
         })
     }
