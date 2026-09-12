@@ -29,6 +29,20 @@ required.
 - Screen Recording permission for the live effect
 - Xcode Command Line Tools when building from source
 
+## Install and open for the first time
+
+1. Download and open the DMG, then drag `fold-like-Duo.app` into Applications.
+2. Open fold-like-Duo from Applications.
+3. The current public build is not Apple-notarized. If macOS says it cannot
+   verify the developer or blocks the app, open **System Settings → Privacy &
+   Security**, scroll down to **Security**, and click **Open Anyway** next to
+   the fold-like-Duo message.
+4. Authenticate with Touch ID or your login password, then click **Open** in
+   the final confirmation dialog.
+
+This is normally required only once. Only open builds downloaded from this
+project's official GitHub Releases page.
+
 ## Build
 
 ```sh

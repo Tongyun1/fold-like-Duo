@@ -27,6 +27,17 @@ fold-like-Duo 是一款原生 macOS 菜单栏应用，让桌面画面跟随 MacB
 - 实时特效需要屏幕录制权限
 - 从源码构建需要 Xcode Command Line Tools
 
+## 安装与首次打开
+
+1. 下载并打开 DMG，将 `fold-like-Duo.app` 拖入“应用程序”文件夹。
+2. 在“应用程序”中打开 fold-like-Duo。
+3. 当前公开构建未经过 Apple 公证。如果 macOS 提示“无法验证开发者”或阻止打开，
+   请打开“系统设置 → 隐私与安全性”，向下滚动到“安全性”，在 fold-like-Duo
+   的提示旁点击“仍要打开”。
+4. 使用 Touch ID 或登录密码确认，然后在最后的确认窗口中点击“打开”。
+
+以上操作通常只需进行一次。请只打开从本项目官方 GitHub Releases 页面下载的版本。
+
 ## 构建
 
 ```sh
