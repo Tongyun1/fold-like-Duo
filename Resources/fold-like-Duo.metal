@@ -45,8 +45,8 @@ vertex VertexOut effectVertex(uint id [[vertex_id]],
     };
     float2 corner = corners[id];
     VertexOut out;
-    // Always cover the full display. Perspective is applied to the texture in
-    // the fragment stage so the fold never exposes empty side regions.
+    // Cover the full display so the fragment stage can draw both the folded
+    // surface and its softly feathered black surround in one continuous pass.
     out.position = float4(corner, 0.0, 1.0);
     out.uv = float2((corner.x + 1.0) * 0.5, (1.0 - corner.y) * 0.5);
     return out;
@@ -65,27 +65,34 @@ fragment float4 effectFragment(VertexOut in [[stage_in]],
     float radius = max(u.maxBlur, 0.0) * progress * ramp;
     float lod = radius < 0.35 ? 0.0 : clamp(log2(max(radius, 1.0)), 0.0, u.maxLod);
 
-    // Pinch the captured desktop toward the far edge while keeping both outer
-    // boundaries fixed. This maps the entire source continuously across the
-    // entire display, avoiding black or transparent side wedges.
+    // Recreate the narrowing trapezoid in screen space. Drawing it inside a
+    // full-screen pass lets the boundary fade into black instead of being cut
+    // off by a hard geometry edge.
     float geometryStrength = mix(1.0, 0.32, clamp(u.reducedMotion, 0.0, 1.0));
-    float perspective = max(1.0 / max(u.topScale, 0.5) - 1.0, 0.0);
-    float pinch = perspective * geometryStrength * pow(farEdge, 1.15);
+    float effectiveTopScale = mix(1.0, u.topScale, geometryStrength);
+    float surfaceScale = mix(1.0, effectiveTopScale, farEdge);
     float centeredX = in.uv.x * 2.0 - 1.0;
-    float warpedX = centeredX * (1.0 + pinch * (1.0 - centeredX * centeredX));
+    float surfaceX = clamp(centeredX / max(surfaceScale, 0.001), -1.0, 1.0);
+
+    // The feather grows with the fold and toward the far edge, matching the
+    // increasing blur there. It straddles the nominal trapezoid boundary so
+    // neither the picture nor the black surround ends abruptly.
+    float boundaryDistance = surfaceScale - abs(centeredX);
+    float feather = 0.008 + 0.060 * pow(progress, 0.75) * pow(farEdge, 0.85);
+    float surfaceMask = smoothstep(-feather, feather, boundaryDistance);
 
     // Core Image uploads with a bottom-left origin; farEdge keeps it upright.
-    float2 sampleUV = float2(clamp(warpedX * 0.5 + 0.5, 0.0, 1.0), farEdge);
+    float2 sampleUV = float2(surfaceX * 0.5 + 0.5, farEdge);
     float3 color = desktop.sample(s, sampleUV, level(lod)).rgb;
 
     float localStrength = progress * ramp;
     color *= 1.0 - clamp(u.darkening, 0.0, 0.8) * localStrength;
     color = mix(color, float3(0.84, 0.89, 0.96), clamp(u.frost, 0.0, 0.6) * localStrength);
 
-    float edgeDistance = min(in.uv.x, 1.0 - in.uv.x);
+    float edgeDistance = min(sampleUV.x, 1.0 - sampleUV.x);
     float edgeWidth = 0.012 + 0.10 * pow(progress, 0.75) * (0.2 + 0.8 * pow(farEdge, 1.25));
     float edgeShade = exp(-pow(edgeDistance / max(edgeWidth, 0.001), 2.0));
     color *= 1.0 - 0.55 * pow(progress, 0.7) * pow(farEdge, 1.25) * edgeShade;
 
-    return float4(color, 1.0);
+    return float4(color * surfaceMask, 1.0);
 }
