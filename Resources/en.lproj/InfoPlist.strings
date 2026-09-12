@@ -1,0 +1,1 @@
+"NSScreenCaptureUsageDescription" = "HingeFlow reads the built-in display only to draw the local lid-fold effect. Frames are never recorded, saved, or uploaded.";
