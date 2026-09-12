@@ -44,10 +44,10 @@ vertex VertexOut effectVertex(uint id [[vertex_id]],
         float2(-1.0,  1.0), float2(1.0,  1.0)
     };
     float2 corner = corners[id];
-    float geometryStrength = mix(1.0, 0.32, clamp(u.reducedMotion, 0.0, 1.0));
-    float scale = corner.y > 0.0 ? mix(1.0, u.topScale, geometryStrength) : 1.0;
     VertexOut out;
-    out.position = float4(corner.x * scale, corner.y, 0.0, 1.0);
+    // Always cover the full display. Perspective is applied to the texture in
+    // the fragment stage so the fold never exposes empty side regions.
+    out.position = float4(corner, 0.0, 1.0);
     out.uv = float2((corner.x + 1.0) * 0.5, (1.0 - corner.y) * 0.5);
     return out;
 }
@@ -65,8 +65,17 @@ fragment float4 effectFragment(VertexOut in [[stage_in]],
     float radius = max(u.maxBlur, 0.0) * progress * ramp;
     float lod = radius < 0.35 ? 0.0 : clamp(log2(max(radius, 1.0)), 0.0, u.maxLod);
 
-    // Core Image uploads with a bottom-left origin; this keeps the desktop upright.
-    float2 sampleUV = float2(in.uv.x, farEdge);
+    // Pinch the captured desktop toward the far edge while keeping both outer
+    // boundaries fixed. This maps the entire source continuously across the
+    // entire display, avoiding black or transparent side wedges.
+    float geometryStrength = mix(1.0, 0.32, clamp(u.reducedMotion, 0.0, 1.0));
+    float perspective = max(1.0 / max(u.topScale, 0.5) - 1.0, 0.0);
+    float pinch = perspective * geometryStrength * pow(farEdge, 1.15);
+    float centeredX = in.uv.x * 2.0 - 1.0;
+    float warpedX = centeredX * (1.0 + pinch * (1.0 - centeredX * centeredX));
+
+    // Core Image uploads with a bottom-left origin; farEdge keeps it upright.
+    float2 sampleUV = float2(clamp(warpedX * 0.5 + 0.5, 0.0, 1.0), farEdge);
     float3 color = desktop.sample(s, sampleUV, level(lod)).rgb;
 
     float localStrength = progress * ramp;
