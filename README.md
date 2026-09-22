@@ -22,6 +22,8 @@ required.
 - Reads the real MacBook lid angle through IOKit HID.
 - Captures the local desktop with ScreenCaptureKit and excludes its own overlay.
 - Keeps the effect at the current angle while the lid is still.
+- Reduces live capture from up to 60 fps to 5 fps after the lid rests for
+  0.75 seconds; unchanged frames and effect parameters leave rendering paused.
 - Clears safely after reopening, sensor loss, sleep, or display changes.
 - Includes a permission-free sample preview and an emergency `⌘⇧Esc` pause.
 - Builds as a Universal 2 app for Apple silicon and Intel.
@@ -58,6 +60,7 @@ project's official GitHub Releases page.
 
 ```sh
 ./test.sh       # build and run checks
+./test-renderer.sh # optional Metal regression checks in a logged-in macOS session
 ./package.sh    # create dist/fold-like-Duo-1.0.0.dmg
 ```
 

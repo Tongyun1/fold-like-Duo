@@ -86,6 +86,29 @@ struct CriticallyDampedMotion {
     }
 }
 
+/// Uses cumulative movement so slow closing still wakes the fast path, while
+/// a stationary lid can keep its live effect with much less capture work.
+struct LidActivity {
+    static let movingFrameRate = 60
+    static let restingFrameRate = 5
+    private var referenceAngle: Double?
+    private var lastMovementAt: Double?
+
+    mutating func observe(_ angle: Double, now: Double) {
+        if let referenceAngle, abs(angle - referenceAngle) < 0.25 { return }
+        referenceAngle = angle
+        lastMovementAt = now
+    }
+
+    func isMoving(at now: Double) -> Bool {
+        lastMovementAt.map { now - $0 < 0.75 } ?? false
+    }
+
+    func captureFrameRate(at now: Double) -> Int {
+        isMoving(at: now) ? Self.movingFrameRate : Self.restingFrameRate
+    }
+}
+
 enum SelfCheck {
     static func run() throws {
         let parameters = EffectParameters()
@@ -106,6 +129,28 @@ enum SelfCheck {
         var motion = CriticallyDampedMotion()
         for _ in 0..<30 { _ = motion.step(target: 1, dt: 1.0 / 60.0, reducedMotion: false) }
         guard motion.value > 0.98, motion.value <= 1 else { throw Failure("motion must converge") }
+
+        var activity = LidActivity()
+        activity.observe(60, now: 0)
+        guard activity.captureFrameRate(at: 0) == 60 else { throw Failure("movement must use live capture") }
+        for tick in 1...600 {
+            let now = Double(tick) / 60
+            activity.observe(60, now: now)
+            if now >= 0.75 {
+                guard activity.captureFrameRate(at: now) == 5 else {
+                    throw Failure("holding the lid must not prolong full-rate capture")
+                }
+            }
+        }
+        activity.observe(60.1, now: 10.1)
+        activity.observe(59.9, now: 10.2)
+        guard !activity.isMoving(at: 10.2) else { throw Failure("small jitter must remain at rest") }
+        activity.observe(59.8, now: 10.3)
+        activity.observe(59.7, now: 10.4)
+        guard activity.isMoving(at: 10.4) else { throw Failure("cumulative slow motion must resume fast capture") }
+        activity.observe(61, now: 11.5)
+        guard activity.isMoving(at: 11.5) else { throw Failure("opening must also resume fast capture") }
+        guard !activity.isMoving(at: 12.3) else { throw Failure("capture must settle again after opening") }
         print("fold-like-Duo self-check passed")
     }
 

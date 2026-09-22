@@ -162,10 +162,10 @@ final class EffectGPU {
 
 final class EffectMetalView: MTKView, MTKViewDelegate {
     var parameters = EffectParameters() {
-        didSet { isPaused = false }
+        didSet { if parameters != oldValue { isPaused = false } }
     }
     var targetProgress: Double = 0 {
-        didSet { isPaused = false }
+        didSet { if targetProgress != oldValue { isPaused = false } }
     }
     var source: CIImage? {
         didSet {
@@ -198,7 +198,7 @@ final class EffectMetalView: MTKView, MTKViewDelegate {
         clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 1)
         isPaused = true
         enableSetNeedsDisplay = false
-        preferredFramesPerSecond = 120
+        preferredFramesPerSecond = 60
         autoResizeDrawable = true
         delegate = self
         autoresizingMask = [.width, .height]
@@ -212,7 +212,7 @@ final class EffectMetalView: MTKView, MTKViewDelegate {
 
     override func viewDidMoveToWindow() {
         super.viewDidMoveToWindow()
-        preferredFramesPerSecond = min(window?.screen?.maximumFramesPerSecond ?? 60, 120)
+        preferredFramesPerSecond = min(window?.screen?.maximumFramesPerSecond ?? 60, 60)
         if window == nil { isPaused = true }
     }
 
@@ -222,19 +222,32 @@ final class EffectMetalView: MTKView, MTKViewDelegate {
         isPaused = false
     }
 
+    func stopRendering() {
+        isPaused = true
+        lastTimestamp = nil
+        pendingSource = nil
+    }
+
     func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
         isPaused = false
     }
 
     func draw(in view: MTKView) {
+        guard hasSource || pendingSource != nil else {
+            isPaused = true
+            return
+        }
         guard let gpu,
-              hasSource || pendingSource != nil,
               drawableSize.width > 0,
               drawableSize.height > 0,
-              inFlight.wait(timeout: .now()) == .success,
-              let drawable = currentDrawable,
-              let commandBuffer = gpu.commandQueue.makeCommandBuffer()
+              inFlight.wait(timeout: .now()) == .success
         else { return }
+
+        guard let drawable = currentDrawable,
+              let commandBuffer = gpu.commandQueue.makeCommandBuffer() else {
+            inFlight.signal()
+            return
+        }
 
         let now = CACurrentMediaTime()
         let dt = lastTimestamp.map { now - $0 } ?? 1.0 / Double(max(preferredFramesPerSecond, 60))

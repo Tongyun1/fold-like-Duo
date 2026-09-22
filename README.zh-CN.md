@@ -20,6 +20,7 @@ fold-like-Duo 是一款原生 macOS 菜单栏应用，让桌面画面跟随 MacB
 - 通过 IOKit HID 读取真实 MacBook 铰链角度。
 - 使用 ScreenCaptureKit 捕获本地桌面，并排除自身覆盖层。
 - 屏幕停止移动时，特效保持在当前角度。
+- 静止 0.75 秒后，实时截屏上限从 60 fps 降至 5 fps；没有新画面或参数变化时暂停渲染。
 - 重新打开、传感器断开、休眠或显示器变化时安全清除特效。
 - 提供无需权限的示例预览，以及 `⌘⇧Esc` 紧急暂停快捷键。
 - 构建为同时支持 Apple 芯片和 Intel 的 Universal 2 应用。
@@ -51,6 +52,7 @@ fold-like-Duo 是一款原生 macOS 菜单栏应用，让桌面画面跟随 MacB
 
 ```sh
 ./test.sh       # 构建并运行检查
+./test-renderer.sh # 可选：在已登录的 macOS 会话中运行 Metal 回归检查
 ./package.sh    # 生成 dist/fold-like-Duo-1.0.0.dmg
 ```
 

@@ -13,6 +13,10 @@ final class DesktopCapture: NSObject, SCStreamOutput, SCStreamDelegate {
     private var stream: SCStream?
     private var configuration: SCStreamConfiguration?
     private var starting = false
+    private var generation = 0
+    private var frameRate = LidActivity.movingFrameRate
+    private var desiredFrameRate = LidActivity.movingFrameRate
+    private var frameRateTask: Task<Void, Never>?
 
     private(set) var isRunning = false
     private(set) var lastFrameAt: Date?
@@ -25,15 +29,20 @@ final class DesktopCapture: NSObject, SCStreamOutput, SCStreamDelegate {
         _ = CGRequestScreenCaptureAccess()
     }
 
-    func start(displayID: CGDirectDisplayID, framesPerSecond: Int = 60) async throws {
+    func start(displayID: CGDirectDisplayID,
+               framesPerSecond: Int = LidActivity.movingFrameRate) async throws {
+        try Task.checkCancellation()
         guard !isRunning, !starting else { return }
         starting = true
         defer { starting = false }
+        let generation = self.generation
         guard Self.hasPermission else {
             throw CaptureError.permissionDenied
         }
 
         let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: false)
+        try Task.checkCancellation()
+        guard generation == self.generation else { throw CancellationError() }
         guard let display = content.displays.first(where: { $0.displayID == displayID }) else {
             throw CaptureError.noBuiltInDisplay
         }
@@ -66,21 +75,60 @@ final class DesktopCapture: NSObject, SCStreamOutput, SCStreamDelegate {
         do {
             try await stream.startCapture()
             try Task.checkCancellation()
+            guard generation == self.generation else { throw CancellationError() }
         } catch {
             try? await stream.stopCapture()
             throw error
         }
         self.configuration = configuration
         self.stream = stream
+        frameRate = framesPerSecond
+        desiredFrameRate = framesPerSecond
         isRunning = true
     }
 
-    func stop() async {
+    func setFrameRate(_ framesPerSecond: Int) {
+        desiredFrameRate = max(framesPerSecond, 1)
+        guard frameRateTask == nil, frameRate != desiredFrameRate,
+              let stream, let configuration else { return }
+        let generation = self.generation
+        // Serialize/coalesce updates; never restart capture just to change rate.
+        frameRateTask = Task { [weak self] in
+            guard let self else { return }
+            defer {
+                if generation == self.generation { frameRateTask = nil }
+            }
+            while generation == self.generation, !Task.isCancelled,
+                  frameRate != desiredFrameRate {
+                let rate = desiredFrameRate
+                configuration.minimumFrameInterval = CMTime(value: 1, timescale: CMTimeScale(rate))
+                do {
+                    try await stream.updateConfiguration(configuration)
+                    guard generation == self.generation else { return }
+                    frameRate = rate
+                } catch {
+                    guard generation == self.generation, !Task.isCancelled else { return }
+                    onFailure?(error.localizedDescription)
+                    return
+                }
+            }
+        }
+    }
+
+    private func invalidateSession() -> SCStream? {
+        generation += 1
+        frameRateTask?.cancel()
+        frameRateTask = nil
         let old = stream
         stream = nil
         configuration = nil
         isRunning = false
         lastFrameAt = nil
+        return old
+    }
+
+    func stop() async {
+        let old = invalidateSession()
         try? await old?.stopCapture()
     }
 
@@ -96,16 +144,19 @@ final class DesktopCapture: NSObject, SCStreamOutput, SCStreamDelegate {
         else { return }
 
         let frame = SendablePixelBuffer(value: pixelBuffer)
+        let streamID = ObjectIdentifier(stream)
         Task { @MainActor [weak self] in
-            self?.lastFrameAt = Date()
-            self?.onFrame?(frame.value)
+            guard let self, self.stream.map(ObjectIdentifier.init) == streamID, isRunning else { return }
+            lastFrameAt = Date()
+            onFrame?(frame.value)
         }
     }
 
     nonisolated func stream(_ stream: SCStream, didStopWithError error: Error) {
+        let streamID = ObjectIdentifier(stream)
         Task { @MainActor [weak self] in
-            guard let self else { return }
-            isRunning = false
+            guard let self, self.stream.map(ObjectIdentifier.init) == streamID else { return }
+            _ = invalidateSession()
             onFailure?(error.localizedDescription)
         }
     }

@@ -42,8 +42,8 @@ final class AppModel: ObservableObject, @unchecked Sendable {
     private var gate = MotionGate()
     private var sensorTimer: Timer?
     private var connected = false
-    private var retryTicks = 0
-    private var lastRawAngle: Double?
+    private var nextSensorRetry: CFTimeInterval = 0
+    private var activity = LidActivity()
     private var smoothedAngle: Double?
     private var captureStartTask: Task<Void, Never>?
     private var captureStopTask: Task<Void, Never>?
@@ -93,7 +93,7 @@ final class AppModel: ObservableObject, @unchecked Sendable {
         }
         installHotKey()
         installObservers()
-        startSensorPolling()
+        scheduleSensorPoll()
         updateMessage()
     }
 
@@ -122,11 +122,12 @@ final class AppModel: ObservableObject, @unchecked Sendable {
     func setAutomatic(_ value: Bool) {
         automatic = value
         if value {
-            gate.reset(at: sensorAngle)
+            gate.reset(at: smoothedAngle)
             updateMessage()
         } else {
             failClear(L10n.text("Paused. Your desktop is back to normal."))
         }
+        scheduleSensorPoll()
     }
 
     func setLaunchAtLogin(_ value: Bool) {
@@ -154,6 +155,7 @@ final class AppModel: ObservableObject, @unchecked Sendable {
         shutdownRequested = true
         sensorTimer?.invalidate()
         sensorTimer = nil
+        sensor.disconnect()
         captureStartTask?.cancel()
         captureStopTask?.cancel()
         overlay.destroy()
@@ -166,29 +168,50 @@ final class AppModel: ObservableObject, @unchecked Sendable {
         Task { await capture.stop() }
     }
 
-    private func startSensorPolling() {
-        let timer = Timer(timeInterval: 1.0 / 60.0, repeats: true) { [weak self] _ in
+    private func scheduleSensorPoll(after interval: TimeInterval = 1.0 / 60.0) {
+        sensorTimer?.invalidate()
+        guard !shutdownRequested, !suspended else { return }
+        let timer = Timer(timeInterval: interval, repeats: false) { [weak self] _ in
             guard let self else { return }
-            Task { @MainActor in
-                if !self.connected {
-                    self.retryTicks += 1
-                    guard self.retryTicks == 1 || self.retryTicks % 300 == 0 else { return }
-                    self.connected = self.sensor.connect()
-                }
-                let reading = self.connected ? self.sensor.read() : nil
-                if reading == nil { self.connected = false }
-                self.receiveSensor(reading, availability: self.sensor.availability)
-            }
+            Task { @MainActor in self.pollSensor() }
         }
+        timer.tolerance = interval * 0.1
         RunLoop.main.add(timer, forMode: .common)
         sensorTimer = timer
     }
 
+    private func pollSensor() {
+        guard !shutdownRequested, !suspended else { return }
+        let now = CACurrentMediaTime()
+        if !connected, now >= nextSensorRetry {
+            connected = sensor.connect()
+            nextSensorRetry = now + 5
+        }
+        let reading = connected ? sensor.read() : nil
+        if let reading {
+            activity.observe(reading, now: now)
+        } else {
+            connected = false
+        }
+        receiveSensor(reading, availability: sensor.availability)
+        let interval: TimeInterval
+        if !connected {
+            interval = max(nextSensorRetry - now, 0.1)
+        } else if !automatic || permissionNeeded || !emergencyShortcutAvailable {
+            interval = 1
+        } else {
+            interval = activity.isMoving(at: now) ? 1.0 / 60.0 : 0.1
+        }
+        scheduleSensorPoll(after: interval)
+    }
+
     private func receiveSensor(_ reading: Double?, availability: LidAngleSensor.Availability) {
         guard !shutdownRequested else { return }
-        sensorAvailability = availability
+        if sensorAvailability != availability { sensorAvailability = availability }
         guard let reading else {
-            sensorAngle = nil
+            if sensorAngle != nil { sensorAngle = nil }
+            smoothedAngle = nil
+            activity = LidActivity()
             gate.reset()
             failClear(L10n.text(availability == .notFound
                       ? "No compatible MacBook lid sensor was found. The sample preview still works."
@@ -196,11 +219,11 @@ final class AppModel: ObservableObject, @unchecked Sendable {
             return
         }
 
-        let previous = lastRawAngle
-        lastRawAngle = reading
-        let filtered = smoothedAngle.map { $0 + (reading - $0) * 0.32 } ?? reading
+        var filtered = smoothedAngle.map { $0 + (reading - $0) * 0.32 } ?? reading
+        if abs(filtered - reading) < 0.01 { filtered = reading }
         smoothedAngle = filtered
-        sensorAngle = filtered
+        // The UI displays whole degrees; do not rebuild SwiftUI at sensor rate.
+        if sensorAngle != filtered.rounded() { sensorAngle = filtered.rounded() }
 
         guard automatic, !suspended, !permissionNeeded, emergencyShortcutAvailable else {
             gate.reset(at: filtered)
@@ -208,44 +231,41 @@ final class AppModel: ObservableObject, @unchecked Sendable {
             return
         }
 
-        let closing = previous.map { reading < $0 - 0.15 } ?? false
         let now = CACurrentMediaTime()
         let permitted = gate.permits(angle: filtered, triggerAngle: triggerAngle, now: now)
         let progress = permitted ? parameters.progress(for: filtered) : 0
         if permitted, progress > 0 {
-            ensureCaptureStarted()
-            effectActive = true
+            guard ensureCaptureStarted() else { return }
+            if !effectActive { effectActive = true }
+            capture.setFrameRate(activity.captureFrameRate(at: now))
             overlay.update(parameters: parameters, progress: progress)
-            message = L10n.format("Following the lid · %d°", Int(filtered.rounded()))
-            captureStopTask?.cancel()
-            captureStopTask = nil
+            setMessage(L10n.format("Following the lid · %d°", Int(filtered.rounded())))
         } else {
             if effectActive { overlay.hide() }
-            effectActive = false
-            if reading >= triggerAngle {
-                stopCaptureImmediately()
-            } else if !closing {
-                scheduleCaptureStop()
-            }
+            if effectActive { effectActive = false }
+            stopCaptureImmediately()
             updateMessage()
         }
     }
 
-    private func ensureCaptureStarted() {
+    private func ensureCaptureStarted() -> Bool {
         guard !capture.isRunning, captureStartTask == nil,
-              let displayID = NSScreen.builtIn?.displayID else { return }
-        captureStopTask?.cancel()
-        captureStopTask = nil
+              captureStopTask == nil else { return true }
+        guard let displayID = NSScreen.builtIn?.displayID else {
+            failClear(CaptureError.noBuiltInDisplay.localizedDescription)
+            return false
+        }
         do {
             try overlay.prepare(parameters: parameters)
         } catch {
             failClear(error.localizedDescription)
-            return
+            return false
         }
         captureStartTask = Task { [weak self] in
             guard let self else { return }
             do {
-                try await capture.start(displayID: displayID, framesPerSecond: 60)
+                try await capture.start(displayID: displayID,
+                                        framesPerSecond: activity.captureFrameRate(at: CACurrentMediaTime()))
                 captureActive = capture.isRunning
             } catch is CancellationError {
                 captureActive = false
@@ -255,11 +275,13 @@ final class AppModel: ObservableObject, @unchecked Sendable {
             }
             captureStartTask = nil
         }
+        return true
     }
 
     private func stopCaptureImmediately() {
+        guard captureStopTask == nil,
+              capture.isRunning || captureStartTask != nil else { return }
         captureStartTask?.cancel()
-        captureStopTask?.cancel()
         captureStopTask = Task { [weak self] in
             guard let self else { return }
             await capture.stop()
@@ -268,34 +290,27 @@ final class AppModel: ObservableObject, @unchecked Sendable {
         }
     }
 
-    private func scheduleCaptureStop() {
-        guard capture.isRunning, captureStopTask == nil else { return }
-        captureStopTask = Task { [weak self] in
-            try? await Task.sleep(for: .milliseconds(750))
-            guard let self, !Task.isCancelled, !effectActive else { return }
-            await capture.stop()
-            captureActive = false
-            captureStopTask = nil
-        }
+    private func failClear(_ reason: String) {
+        gate.reset(at: smoothedAngle)
+        overlay.hide()
+        if effectActive { effectActive = false }
+        setMessage(reason)
+        stopCaptureImmediately()
     }
 
-    private func failClear(_ reason: String) {
-        gate.reset(at: sensorAngle)
-        overlay.hide()
-        effectActive = false
-        message = reason
-        if capture.isRunning { scheduleCaptureStop() }
+    private func setMessage(_ value: String) {
+        if message != value { message = value }
     }
 
     private func updateMessage() {
         if permissionNeeded {
-            message = L10n.text("Screen access is required for the live effect.")
+            setMessage(L10n.text("Screen access is required for the live effect."))
         } else if sensorAvailability != .available {
-            message = L10n.text("Waiting for a compatible lid-angle sensor.")
+            setMessage(L10n.text("Waiting for a compatible lid-angle sensor."))
         } else if !automatic {
-            message = L10n.text("Paused. The sample preview remains available.")
+            setMessage(L10n.text("Paused. The sample preview remains available."))
         } else {
-            message = L10n.format("Ready. Close the lid below %d° to begin.", Int(triggerAngle))
+            setMessage(L10n.format("Ready. Close the lid below %d° to begin.", Int(triggerAngle)))
         }
     }
 
@@ -360,22 +375,24 @@ final class AppModel: ObservableObject, @unchecked Sendable {
 
     private func suspendForSystem() {
         suspended = true
+        sensorTimer?.invalidate()
+        sensorTimer = nil
+        sensor.disconnect()
+        connected = false
         failClear(L10n.text("Suspended safely while the display is unavailable."))
-        Task {
-            await capture.stop()
-            captureActive = false
-        }
         overlay.destroy()
     }
 
     private func resumeAfterSystem() {
+        guard !shutdownRequested else { return }
         suspended = false
         connected = false
-        retryTicks = 0
-        lastRawAngle = nil
+        nextSensorRetry = 0
+        activity = LidActivity()
         smoothedAngle = nil
         gate.reset()
         updateMessage()
+        scheduleSensorPoll()
     }
 
     private func installHotKey() {

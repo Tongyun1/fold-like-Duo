@@ -78,8 +78,8 @@ final class OverlayController {
     }
 
     func setSource(_ image: CIImage) {
-        metalView?.source = image
         guard desiredProgress > 0, let window else { return }
+        metalView?.source = image
         if !window.isVisible {
             awaitingFirstFrame = true
             window.alphaValue = 0
@@ -93,6 +93,7 @@ final class OverlayController {
         awaitingFirstFrame = false
         metalView?.targetProgress = 0
         metalView?.resetMotion()
+        metalView?.stopRendering()
         window?.alphaValue = 0
         window?.orderOut(nil)
         isVisible = false
