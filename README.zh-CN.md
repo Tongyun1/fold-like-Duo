@@ -53,7 +53,7 @@ fold-like-Duo 是一款原生 macOS 菜单栏应用，让桌面画面跟随 MacB
 ```sh
 ./test.sh       # 构建并运行检查
 ./test-renderer.sh # 可选：在已登录的 macOS 会话中运行 Metal 回归检查
-./package.sh    # 生成 dist/fold-like-Duo-1.0.0.dmg
+./package.sh    # 生成 dist/fold-like-Duo-1.0.1.dmg
 ```
 
 默认使用临时签名。使用 Developer ID 分发时：

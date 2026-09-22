@@ -61,7 +61,7 @@ project's official GitHub Releases page.
 ```sh
 ./test.sh       # build and run checks
 ./test-renderer.sh # optional Metal regression checks in a logged-in macOS session
-./package.sh    # create dist/fold-like-Duo-1.0.0.dmg
+./package.sh    # create dist/fold-like-Duo-1.0.1.dmg
 ```
 
 The default build is ad-hoc signed. For distribution with a Developer ID:
